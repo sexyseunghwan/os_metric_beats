@@ -41,9 +41,13 @@ pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
     엘라스틱 서치 커넥션을 가져와주는 get() 함수
 */
 pub fn get_elastic_conn() -> Arc<EsRepositoryPub> {
-
     let es_conn = &ELASTICSEARCH_CLIENT;
     Arc::clone(&es_conn)
+}
+
+#[async_trait]
+pub trait EsRepository {
+    async fn post_doc(&self, index_name: &str, document: Value) -> Result<(), anyhow::Error>;
 }
 
 #[derive(Debug, Getters, Clone)]
@@ -78,7 +82,7 @@ impl EsRepositoryPub {
             let es_client = EsClient::new(url, elastic_conn);
             es_clients.push(es_client);
         }
-
+        
         Ok(EsRepositoryPub{es_clients})
     }
     
@@ -115,4 +119,43 @@ impl EsRepositoryPub {
         ))
     }
 
+}
+
+
+#[async_trait]
+impl EsRepository for EsRepositoryPub {
+    
+
+    /*
+        
+    */
+    async fn post_doc(&self, index_name: &str, document: Value) -> Result<(), anyhow::Error> {
+
+        // 클로저 내에서 사용할 복사본을 생성
+        let document_clone = document.clone();
+        
+        let response = self.execute_on_any_node(|es_client| {
+            // 클로저 내부에서 클론한 값 사용
+            let value = document_clone.clone(); 
+    
+            async move { 
+                let response = es_client
+                    .es_conn
+                    .index(IndexParts::Index(index_name))
+                    .body(value)
+                    .send()
+                    .await?;
+    
+                Ok(response)
+            }
+        })
+        .await?;
+        
+        if response.status_code().is_success() {
+            Ok(())
+        } else {
+            let error_message = format!("[Elasticsearch Error][post_doc()] Failed to index document: Status Code: {}", response.status_code());
+            Err(anyhow!(error_message))
+        }
+    }
 }
