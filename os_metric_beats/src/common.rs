@@ -71,7 +71,8 @@ pub use chrono::{
 pub use sysinfo::{
     CpuExt, 
     System, 
-    SystemExt
+    SystemExt,
+    DiskExt
 };
 
 

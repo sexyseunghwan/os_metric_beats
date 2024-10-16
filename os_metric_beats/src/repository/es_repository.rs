@@ -4,6 +4,9 @@ use crate::utils_module::io_utils::*;
 
 use crate::model::ClusterJson::*;
 
+/*
+    Elasticsearch connection 을 싱글톤으로 관리하기 위한 전역 변수.
+*/
 static ELASTICSEARCH_CLIENT: once_lazy<Arc<EsRepositoryPub>> = once_lazy::new(|| {
     initialize_elastic_clients()
 });
@@ -126,9 +129,6 @@ impl EsRepositoryPub {
 impl EsRepository for EsRepositoryPub {
     
 
-    /*
-        
-    */
     async fn post_doc(&self, index_name: &str, document: Value) -> Result<(), anyhow::Error> {
 
         // 클로저 내에서 사용할 복사본을 생성

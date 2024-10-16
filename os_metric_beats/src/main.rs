@@ -1,9 +1,24 @@
+/*
+Author      : Seunghwan Shin 
+Create date : 2024-10-16 
+Description : Elasticsearch 가 실행되고 있는 OS 의 metric 정보를 수집하기 위한 프로그램.
+    
+History     : 2024-10-16 Seunghwan Shin       # first create
+*/ 
+
+
 pub mod common;
 use common::*;
 
 pub mod handler;
+use handler::main_handler::*;
+
 pub mod repository;
+
 pub mod service;
+use service::os_metirc_service::*;
+use service::request_service::*;
+
 pub mod model;
 
 pub mod utils_module;
@@ -13,11 +28,24 @@ use utils_module::logger_utils::*;
 async fn main() {
     
     set_global_logger();
-    info!("program start");
+    info!("metricbeats program start");
 
+    let os_metirc_service = MetricServicePub::new();
+    let request_service = RequestServicePub::new();
+    let mut main_handler = MainHandler::new(os_metirc_service, request_service);
     
-    let test = local_ip().unwrap();
+    loop {
+        
+        match main_handler.task_set().await {
+            Ok(_) => (),
+            Err(err) => {
+                error!("{:?}", err);
+                std::thread::sleep(Duration::from_secs(10));
+                continue;
+            }
+        };
 
-    println!("{:?}", test);
-
+        std::thread::sleep(Duration::from_secs(10));
+    }
+    
 }
