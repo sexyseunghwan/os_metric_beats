@@ -7,4 +7,6 @@ pub struct MetricInfo {
      pub system_cpu_usage: f32,
      pub system_disk_usage: f64,
      pub system_memory_usage: f64,
+     pub network_received: u64,
+     pub network_transmitted: u64
 }

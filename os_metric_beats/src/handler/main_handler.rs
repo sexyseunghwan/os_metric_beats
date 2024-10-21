@@ -5,6 +5,7 @@ use crate::service::request_service::*;
 
 use crate::model::MetricInfo::*;
 use crate::model::OsJson::*;
+use crate::model::IndexPattern::*;
 
 use crate::utils_module::time_utils::*;
 use crate::utils_module::io_utils::*;
@@ -53,14 +54,19 @@ impl<M: MetricService, R: RequestService> MainHandler<M, R> {
         let system_cpu_usage = self.metric_service.get_cpu_usage();
         let system_disk_usage = self.metric_service.get_disk_usage();
         let system_memory_usage = self.metric_service.get_memory_usage();
-        
-        let index_name = format!("metric_system_info_{}", get_str_from_naivedatetime(cur_utc_time, "%Y%m%d")?);
+        let system_network_usage = self.metric_service.get_network_usage();
+
+        let log_index_name = read_json_from_file::<IndexPattern>("./datas/index_pattern.json")?;
+
+        let index_name = format!("{}{}", log_index_name.index_pattern, get_str_from_naivedatetime(cur_utc_time, "%Y%m%d")?);
         let metric_info = MetricInfo::new(
                 cur_utc_time_str, 
                 self.private_ip.clone(), 
                 system_cpu_usage,
                 system_disk_usage,
-                system_memory_usage
+                system_memory_usage,
+                system_network_usage.network_received,
+                system_network_usage.network_transmitted
             );
         
         self.request_service.request_metric_to_elastic(&index_name, metric_info).await?;

@@ -24,7 +24,7 @@ pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
             panic!("{:?}", err)
         }
     };
-
+    
     let es_helper = match EsRepositoryPub::new(
             cluster_config.hosts.clone(), 
             &cluster_config.es_id, 

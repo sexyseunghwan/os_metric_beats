@@ -1,10 +1,12 @@
 use crate::common::*;
 
+use crate::model::NetworkUsage::*;
 
 pub trait MetricService {
     fn get_cpu_usage(&mut self) -> f32;
     fn get_disk_usage(&mut self) -> f64;
     fn get_memory_usage(&mut self) -> f64;
+    fn get_network_usage(&mut self) -> NetworkUsage;
 }
 
 #[derive(Debug)]
@@ -31,7 +33,7 @@ impl MetricService for MetricServicePub {
 
         // 시스템 정보를 새로 고침 (CPU 사용량 등을 업데이트)
         self.system.refresh_cpu();
-
+        
         let cpu_usage_sum: f32 = self.system.cpus().iter().map(|cpu| cpu.cpu_usage()).sum();
         let cpu_thread_cnt = self.system.cpus().len();
 
@@ -65,7 +67,7 @@ impl MetricService for MetricServicePub {
         0.0
     }
 
-
+    
     /*
         memory 사용률을 체크
     */
@@ -82,5 +84,25 @@ impl MetricService for MetricServicePub {
         // 소수점 둘째 자리에서 반올림
         (usage_percentage * 100.0).round() / 100.0
     }
+    
+    
+    /*
+        Network 사용량 체크
+    */
+    fn get_network_usage(&mut self) -> NetworkUsage {
 
+        self.system.refresh_networks_list();
+
+        let networks = self.system.networks();
+        let mut network_received: u64 = 0;
+        let mut network_transmitted: u64 = 0;
+
+        for (_interface_name, network) in networks.iter() {
+            network_received += network.received();
+            network_transmitted += network.transmitted();
+        }
+        
+        NetworkUsage::new(network_received, network_transmitted)
+    }
+    
 }

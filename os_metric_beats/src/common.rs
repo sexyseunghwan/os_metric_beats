@@ -3,7 +3,7 @@ pub use std::{
     io::BufReader, 
     fs::File,
     sync::Arc,
-    future::Future
+    future::Future,
 };
 
 
@@ -72,7 +72,10 @@ pub use sysinfo::{
     CpuExt, 
     System, 
     SystemExt,
-    DiskExt
+    DiskExt,
+    NetworkExt,
+    NetworksExt,
+    ComponentExt
 };
 
 
