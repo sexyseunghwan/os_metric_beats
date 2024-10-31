@@ -3,8 +3,9 @@ Author      : Seunghwan Shin
 Create date : 2024-10-16 
 Description : Elasticsearch 가 실행되고 있는 OS 의 metric 정보를 수집하기 위한 프로그램.
     
-History     : 2024-10-16 Seunghwan Shin       # first create
-              2024-10-21 Seunghwan Shin       # 1) 시스템 메트릭을 저장할 인덱스를 동적으로 바꿀수 있도록 소스변경.
+History     : 2024-10-16 Seunghwan Shin       # [v.1.0.0] first create
+              2024-10-21 Seunghwan Shin       # [v.1.1.0]
+                                                1) 시스템 메트릭을 저장할 인덱스를 동적으로 바꿀수 있도록 소스변경.
                                                 2) Network 메트릭도 시스템 모니터 메트릭 대상으로 추가.
 */ 
 
