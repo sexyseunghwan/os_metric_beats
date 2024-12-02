@@ -4,6 +4,7 @@ use crate::model::NetworkUsage::*;
 
 pub trait MetricService {
     fn get_cpu_usage(&mut self) -> f32;
+    fn get_cpu_usage_avg_thread(&mut self) -> f32;
     fn get_disk_usage(&mut self) -> f64;
     fn get_memory_usage(&mut self) -> f64;
     fn get_network_usage(&mut self) -> NetworkUsage;
@@ -26,14 +27,31 @@ impl MetricServicePub {
 
 impl MetricService for MetricServicePub {
 
-    /* 
-        cpu 의 평균 사용률을 체크. - 스레드 별 평균
-    */
+    
+    #[doc = "cpu 의 사용률을 체크. - cpu Max 값 추출"]
     fn get_cpu_usage(&mut self) -> f32 {
 
-        // 시스템 정보를 새로 고침 (CPU 사용량 등을 업데이트)
+        /* 시스템 정보를 새로 고침 (CPU 사용량 등을 업데이트) */ 
         self.system.refresh_cpu();
         
+        let mut max_cpu_val: f32 = 0.0;
+        
+        for cpu in self.system.cpus() {
+            let thread_cpu_usage = cpu.cpu_usage();
+            max_cpu_val = max_cpu_val.max(thread_cpu_usage);
+        }
+
+        max_cpu_val.round() * 100.0 / 100.0
+
+    }
+
+
+    #[doc = "cpu 의 평균 사용률을 체크. - 스레드별 평균"]
+    fn get_cpu_usage_avg_thread(&mut self) -> f32 {
+
+        /* 시스템 정보를 새로 고침 (CPU 사용량 등을 업데이트) */ 
+        self.system.refresh_cpu();
+
         let cpu_usage_sum: f32 = self.system.cpus().iter().map(|cpu| cpu.cpu_usage()).sum();
         let cpu_thread_cnt = self.system.cpus().len();
 
@@ -43,14 +61,13 @@ impl MetricService for MetricServicePub {
 
         let cpu_usage_avg = cpu_usage_sum / cpu_thread_cnt as f32;
         let cpu_usage_avg_round = cpu_usage_avg.round() * 100.0 / 100.0;
-        
+
         cpu_usage_avg_round
     }
 
 
-    /*
-        disk 사용률을 체크
-    */
+    
+    #[doc = "disk 사용률을 체크"]
     fn get_disk_usage(&mut self) -> f64 {
 
         self.system.refresh_disks_list();
@@ -68,9 +85,8 @@ impl MetricService for MetricServicePub {
     }
 
     
-    /*
-        memory 사용률을 체크
-    */
+    
+    #[doc = "memory 사용률을 체크"]
     fn get_memory_usage(&mut self) -> f64 {
         
         self.system.refresh_memory();
@@ -86,9 +102,8 @@ impl MetricService for MetricServicePub {
     }
     
     
-    /*
-        Network 사용량 체크
-    */
+    
+    #[doc = "Network 사용량 체크"]
     fn get_network_usage(&mut self) -> NetworkUsage {
 
         self.system.refresh_networks_list();
