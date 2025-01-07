@@ -80,10 +80,10 @@ impl MetricService for MetricServicePub {
         let total_memory = self.system.total_memory() as f64;
         let used_memory = self.system.used_memory() as f64;
 
-        // 사용된 메모리 비율 계산
+        /* 사용된 메모리 비율 계산 */ 
         let usage_percentage = (used_memory / total_memory) * 100.0;
 
-        // 소수점 둘째 자리에서 반올림
+        /* 소수점 둘째 자리에서 반올림 */ 
         (usage_percentage * 100.0).round() / 100.0
     }
 
