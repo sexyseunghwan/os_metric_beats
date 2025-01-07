@@ -1,5 +1,4 @@
-pub mod ClusterJson;
-pub mod MetricInfo;
-pub mod OsJson;
-pub mod IndexPattern;
-pub mod NetworkUsage;
+pub mod elastic_info_config;
+pub mod metric_info;
+pub mod network_usage;
+pub mod system_config;
