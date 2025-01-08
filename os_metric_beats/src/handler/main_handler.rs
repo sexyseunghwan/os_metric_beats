@@ -83,6 +83,8 @@ impl<M: MetricService, R: RequestService> MainHandler<M, R> {
             .request_metric_to_elastic(index_name, metric_info)
             .await?;
 
+        info!("System metrics collection completed successfully.");
+
         Ok(())
     }
 }

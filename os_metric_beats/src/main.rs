@@ -8,7 +8,7 @@ History     : 2024-10-16 Seunghwan Shin       # [v.1.0.0] first create
                                                 1) 시스템 메트릭을 저장할 인덱스를 동적으로 바꿀수 있도록 소스변경.
                                                 2) Network 메트릭도 시스템 모니터 메트릭 대상으로 추가.
               2024-12-02 Seunghwan Shin       # [v.1.1.1] CPU 모니터링을 스레드 평균에서 max 값으로 변경
-              2025-01-07 Seunghwan Shin       # [v.1.1.2] 설정파일을 모두 json -> toml 파일로 전환
+              2025-01-08 Seunghwan Shin       # [v.1.1.2] 설정파일을 모두 json -> toml 파일로 전환
 */
 
 pub mod common;
@@ -32,7 +32,7 @@ use utils_module::logger_utils::*;
 async fn main() {
     set_global_logger();
     info!("Operating System Metricbeats Program Start");
-    
+
     let os_metirc_service = MetricServicePub::new();
     let request_service = RequestServicePub::new();
     let mut main_handler = MainHandler::new(os_metirc_service, request_service);

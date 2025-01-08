@@ -1,9 +1,7 @@
 use crate::common::*;
 
 use crate::utils_module::io_utils::*;
-use crate::utils_module::time_utils::*;
 
-//use crate::model::ClusterJson::*;
 use crate::model::elastic_info_config::*;
 
 #[doc = "Elasticsearch connection 을 싱글톤으로 관리하기 위한 전역 변수."]
@@ -40,7 +38,7 @@ pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
 #[doc = "엘라스틱 서치 커넥션을 가져와주는 get() 함수"]
 pub fn get_elastic_conn() -> Arc<EsRepositoryPub> {
     let es_conn = &ELASTICSEARCH_CLIENT;
-    Arc::clone(&es_conn)
+    Arc::clone(es_conn)
 }
 
 #[async_trait]
@@ -98,6 +96,11 @@ impl EsRepositoryPub {
     }
 
     #[doc = "Common logic: common node failure handling and node selection"]
+    /// # Arguments
+    /// * `operation` - Elasticsearch 특정 노드의 함수
+    ///
+    /// # Returns
+    /// * Result<T, anyhow::Error>
     async fn execute_on_any_node<F, Fut>(&self, operation: F) -> Result<Response, anyhow::Error>
     where
         F: Fn(EsClient) -> Fut + Send + Sync,
@@ -132,8 +135,8 @@ impl EsRepositoryPub {
 impl EsRepository for EsRepositoryPub {
     #[doc = ""]
     /// # Arguments
-    /// * `index_name` - 인덱스 이름
-    /// * `document` - 색인할 문서
+    /// * `index_name`- 인덱스 이름
+    /// * `document`  - 색인할 문서
     ///
     /// # Returns
     /// * Result<(), anyhow::Error>
