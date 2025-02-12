@@ -4,6 +4,8 @@ use crate::utils_module::io_utils::*;
 
 use crate::model::elastic_info_config::*;
 
+use crate::env_configuration::env_config::*;
+
 #[doc = "Elasticsearch connection 을 싱글톤으로 관리하기 위한 전역 변수."]
 static ELASTICSEARCH_CLIENT: once_lazy<Arc<EsRepositoryPub>> =
     once_lazy::new(|| initialize_elastic_clients());
@@ -11,7 +13,7 @@ static ELASTICSEARCH_CLIENT: once_lazy<Arc<EsRepositoryPub>> =
 #[doc = "Function to initialize Elasticsearch connection instances"]
 pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
     let cluster_config: ElasticInfoConfig =
-        match read_toml_from_file::<ElasticInfoConfig>(ELASTIC_SERVER_INFO) {
+        match read_toml_from_file::<ElasticInfoConfig>(&ELASTIC_SERVER_INFO) {
             Ok(cluster_config) => cluster_config,
             Err(e) => {
                 error!("{:?}", e);
@@ -19,18 +21,19 @@ pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
             }
         };
 
-    let es_hosts = cluster_config.hosts().clone();
-    let es_id = cluster_config.es_id().clone().unwrap_or(String::from(""));
-    let es_pw = cluster_config.es_pw().clone().unwrap_or(String::from(""));
-    let index_pattern = cluster_config.index_pattern().clone();
+    let es_hosts: Vec<String> = cluster_config.hosts().clone();
+    let es_id: String = cluster_config.es_id().clone().unwrap_or(String::from(""));
+    let es_pw: String = cluster_config.es_pw().clone().unwrap_or(String::from(""));
+    let index_pattern: String = cluster_config.index_pattern().clone();
 
-    let es_helper = match EsRepositoryPub::new(es_hosts, &es_id, &es_pw, &index_pattern) {
-        Ok(es_helper) => es_helper,
-        Err(err) => {
-            error!("{:?}", err);
-            panic!("{:?}", err)
-        }
-    };
+    let es_helper: EsRepositoryPub =
+        match EsRepositoryPub::new(es_hosts, &es_id, &es_pw, &index_pattern) {
+            Ok(es_helper) => es_helper,
+            Err(err) => {
+                error!("{:?}", err);
+                panic!("{:?}", err)
+            }
+        };
 
     Arc::new(es_helper)
 }
@@ -69,7 +72,7 @@ impl EsRepositoryPub {
         let mut es_clients: Vec<EsClient> = Vec::new();
 
         for url in hosts {
-            let parse_url;
+            let parse_url: String;
 
             /* Elasticsearch 에 비밀번호를 설정해둔 경우와 그렇지 않은 경우를 고려함 */
             if es_id != "" && es_pw != "" {
@@ -78,14 +81,15 @@ impl EsRepositoryPub {
                 parse_url = format!("http://{}", url);
             }
 
-            let es_url = Url::parse(&parse_url)?;
-            let conn_pool = SingleNodeConnectionPool::new(es_url);
-            let transport = TransportBuilder::new(conn_pool)
-                .timeout(Duration::new(5, 0))
-                .build()?;
+            let es_url: Url = Url::parse(&parse_url)?;
+            let conn_pool: SingleNodeConnectionPool = SingleNodeConnectionPool::new(es_url);
+            let transport: elasticsearch::http::transport::Transport =
+                TransportBuilder::new(conn_pool)
+                    .timeout(Duration::new(5, 0))
+                    .build()?;
 
-            let elastic_conn = Elasticsearch::new(transport);
-            let es_client = EsClient::new(url, elastic_conn);
+            let elastic_conn: Elasticsearch = Elasticsearch::new(transport);
+            let es_client: EsClient = EsClient::new(url, elastic_conn);
             es_clients.push(es_client);
         }
 
@@ -106,8 +110,8 @@ impl EsRepositoryPub {
         F: Fn(EsClient) -> Fut + Send + Sync,
         Fut: Future<Output = Result<Response, anyhow::Error>> + Send,
     {
-        let mut last_error = None;
-        let mut rng = StdRng::from_entropy(); /* 랜덤 시드로 생성 */
+        let mut last_error: Option<anyhow::Error> = None;
+        let mut rng: StdRng = StdRng::from_entropy(); /* 랜덤 시드로 생성 */
 
         /*  클라이언트 목록을 셔플 -> StdRng를 사용하여 셔플 */
         let mut shuffled_clients: Vec<EsClient> = self.es_clients.clone();
@@ -133,7 +137,7 @@ impl EsRepositoryPub {
 
 #[async_trait]
 impl EsRepository for EsRepositoryPub {
-    #[doc = ""]
+    #[doc = "Elasticsearch 에 색인해주는 함수"]
     /// # Arguments
     /// * `index_name`- 인덱스 이름
     /// * `document`  - 색인할 문서
@@ -142,9 +146,9 @@ impl EsRepository for EsRepositoryPub {
     /// * Result<(), anyhow::Error>
     async fn post_doc(&self, index_name: &str, document: Value) -> Result<(), anyhow::Error> {
         /* 클로저 내에서 사용할 복사본을 생성 */
-        let document_clone = document.clone();
+        let document_clone: Value = document.clone();
 
-        let response = self
+        let response: Response = self
             .execute_on_any_node(|es_client| {
                 /* 클로저 내부에서 클론한 값 사용 */
                 let value = document_clone.clone();
@@ -164,7 +168,7 @@ impl EsRepository for EsRepositoryPub {
         if response.status_code().is_success() {
             Ok(())
         } else {
-            let error_message = format!(
+            let error_message: String = format!(
                 "[Elasticsearch Error][post_doc()] Failed to index document: Status Code: {}",
                 response.status_code()
             );

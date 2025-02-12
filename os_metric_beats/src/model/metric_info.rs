@@ -9,4 +9,13 @@ pub struct MetricInfo {
     pub system_memory_usage: f64,
     pub network_received: u64,
     pub network_transmitted: u64,
+    pub process_count: usize,
+    pub dropped_packets: i64,
+    pub errors_packet: i64,
+    pub tcp_connections: i32,
+    pub udp_sockets: i32,
+    pub tcp_established: i32,
+    pub tcp_timewait: i32,
+    pub tcp_listen: i32,
+    pub tcp_close_wait: i32,
 }

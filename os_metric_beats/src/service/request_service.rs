@@ -23,8 +23,7 @@ impl RequestService for RequestServicePub {
         index_name: String,
         metric_info: MetricInfo,
     ) -> Result<(), anyhow::Error> {
-        let es_conn = get_elastic_conn();
-        //let index_pattern = es_conn.index_pattern();
+        let es_conn: Arc<EsRepositoryPub> = get_elastic_conn();
         let document: Value = serde_json::to_value(&metric_info)?;
 
         es_conn.post_doc(&index_name, document).await?;
