@@ -12,6 +12,7 @@ pub trait MetricService {
     fn get_network_usage(&mut self) -> NetworkUsage;
     fn get_process_count(&mut self) -> usize;
     fn get_network_packet_infos(&mut self) -> Result<NetworkPacketInfo, anyhow::Error>;
+    fn get_socket_info_parsing(&mut self, socket_vec: &Vec<&str>) -> (i64, i64);
     fn get_socket_info(&mut self) -> Result<NetworkSocketInfo, anyhow::Error>;
 }
 
@@ -115,6 +116,32 @@ impl MetricService for MetricServicePub {
         process_count
     }
 
+    #[doc = "네트워크 패킷정보를 반환해주는 함수 - 파싱 함수"]
+    /// # Arguments
+    /// * `socket_vec` - 소켓정보가 들어있는 벡터
+    ///
+    /// # Returns
+    /// * (i64, i64)
+    fn get_socket_info_parsing(&mut self, socket_vec: &Vec<&str>) -> (i64, i64) {
+        let recv_packet: i64 = match socket_vec.get(socket_vec.len() - 2) {
+            Some(recv_packet) => recv_packet.parse::<i64>().unwrap_or(0),
+            None => {
+                error!("[Error][get_socket_info_parsing()] The value 'recv_packet' does not exist. : {:?}", socket_vec);
+                0
+            }
+        };
+
+        let send_packet: i64 = match socket_vec.last() {
+            Some(send_packet) => send_packet.parse::<i64>().unwrap_or(0),
+            None => {
+                error!("[Error][get_socket_info_parsing()] The value 'send_packet' does not exist. : {:?}", socket_vec);
+                0
+            }
+        };
+
+        (recv_packet, send_packet)
+    }
+
     #[doc = "네트워크 패킷정보를 반환해주는 함수"]
     fn get_network_packet_infos(&mut self) -> Result<NetworkPacketInfo, anyhow::Error> {
         let output: Vec<u8> = std::process::Command::new("netstat")
@@ -124,35 +151,33 @@ impl MetricService for MetricServicePub {
 
         let output_str: std::borrow::Cow<'_, str> = String::from_utf8_lossy(&output);
 
-        let mut dropped_packets: i64 = 0;
-        let mut errors_packet: i64 = 0;
+        let mut recv_dropped_packets: i64 = 0;
+        let mut send_dropped_packets: i64 = 0;
+        let mut recv_errors_packet: i64 = 0;
+        let mut send_errors_packet: i64 = 0;
+
+        let mut line_cursor: i32 = 0;
 
         for line in output_str.lines() {
             let parts: Vec<&str> = line.split_whitespace().collect();
 
-            if line.contains("버림") {
-                dropped_packets = match parts.last() {
-                    Some(parts) => parts.parse::<i64>().unwrap_or(0),
-                    None => {
-                        error!("[Error][get_network_packet_infos()] The value 'droped_packets' does not exist.");
-                        0
-                    }
-                }
+            if line_cursor == 6 {
+                (recv_dropped_packets, send_dropped_packets) = self.get_socket_info_parsing(&parts);
             }
 
-            if line.contains("오류") {
-                errors_packet = match parts.last() {
-                    Some(parts) => parts.parse::<i64>().unwrap_or(0),
-                    None => {
-                        error!("[Error][get_network_packet_infos()] The value 'errors' does not exist.");
-                        0
-                    }
-                }
+            if line_cursor == 8 {
+                (recv_errors_packet, send_errors_packet) = self.get_socket_info_parsing(&parts);
             }
+
+            line_cursor += 1;
         }
 
-        let network_packet_info: NetworkPacketInfo =
-            NetworkPacketInfo::new(dropped_packets, errors_packet);
+        let network_packet_info: NetworkPacketInfo = NetworkPacketInfo::new(
+            recv_dropped_packets,
+            send_dropped_packets,
+            recv_errors_packet,
+            send_errors_packet,
+        );
 
         Ok(network_packet_info)
     }

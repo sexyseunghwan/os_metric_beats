@@ -7,9 +7,9 @@ use crate::service::request_service::*;
 
 use crate::model::metric_info::*;
 use crate::model::network_packet_info::*;
+use crate::model::network_socket_info::*;
 use crate::model::network_usage::*;
 use crate::model::system_config::*;
-use crate::model::network_socket_info::*;
 
 use crate::utils_module::io_utils::*;
 use crate::utils_module::time_utils::*;
@@ -77,16 +77,18 @@ impl<M: MetricService, R: RequestService> MainHandler<M, R> {
             system_network_usage.network_received,
             system_network_usage.network_transmitted,
             process_count,
-            network_packet_info.dropped_packets,
-            network_packet_info.errors_packet,
+            network_packet_info.recv_dropped_packets,
+            network_packet_info.send_dropped_packets,
+            network_packet_info.recv_errors_packet,
+            network_packet_info.send_errors_packet,
             network_socket_info.tcp_connections,
             network_socket_info.udp_sockets,
             network_socket_info.tcp_established,
             network_socket_info.tcp_timewait,
             network_socket_info.tcp_listen,
-            network_socket_info.tcp_close_wait
+            network_socket_info.tcp_close_wait,
         );
-        
+
         self.request_service
             .request_metric_to_elastic(index_name, metric_info)
             .await?;
