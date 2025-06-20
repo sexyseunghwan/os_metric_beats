@@ -65,14 +65,32 @@ impl MetricService for MetricServicePub {
     fn get_disk_usage(&mut self) -> f64 {
         self.system.refresh_disks_list();
 
-        if let Some(disk) = self.system.disks().iter().next() {
+        /* D:\ 드라이브를 찾기 */ 
+        if let Some(disk) = self.system.disks().iter().find(|d| {
+            d.mount_point().to_str().map_or(false, |path| path.starts_with("D:\\"))
+        }) {
+            
             let total_space: f64 = disk.total_space() as f64;
             let available_space: f64 = disk.available_space() as f64;
             let used_space: f64 = total_space - available_space;
-
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
+
+            /* 소수점 둘째 자리 반올림 */ 
             return (usage_percentage * 100.0).round() / 100.0;
         }
+
+
+        // if let Some(disk) = self.system.disks().iter().next() {
+            
+        //     println!("{:?}", disk);
+
+        //     let total_space: f64 = disk.total_space() as f64;
+        //     let available_space: f64 = disk.available_space() as f64;
+        //     let used_space: f64 = total_space - available_space;
+
+        //     let usage_percentage: f64 = (used_space / total_space) * 100.0;
+        //     return (usage_percentage * 100.0).round() / 100.0;
+        // }
 
         0.0
     }
