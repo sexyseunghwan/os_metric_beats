@@ -45,3 +45,5 @@ pub use local_ip_address::local_ip;
 pub use netstat2::{
     get_sockets_info, AddressFamilyFlags, ProtocolFlags, ProtocolSocketInfo, SocketInfo, TcpState,
 };
+
+pub use wmi::{WMIConnection, Variant, COMLibrary};

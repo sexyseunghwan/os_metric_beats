@@ -4,20 +4,13 @@ use crate::repository::es_repository::*;
 
 use crate::model::metric_info::*;
 
-#[async_trait]
-pub trait RequestService {
-    async fn request_metric_to_elastic(
-        &self,
-        index_name: String,
-        metric_info: MetricInfo,
-    ) -> Result<(), anyhow::Error>;
-}
+use crate::traits::request_service::*;
 
 #[derive(Clone, Debug, new)]
-pub struct RequestServicePub;
+pub struct RequestServiceImpl;
 
 #[async_trait]
-impl RequestService for RequestServicePub {
+impl RequestService for RequestServiceImpl {
     async fn request_metric_to_elastic(
         &self,
         index_name: String,
