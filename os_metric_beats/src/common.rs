@@ -1,4 +1,12 @@
-pub use std::{env, fs::File, future::Future, io::BufReader, io::Write, sync::Arc};
+pub use std::{
+    env, fs::File, 
+    future::Future, 
+    io::BufReader, 
+    io::Write, 
+    sync::Arc,
+    thread::sleep as std_sleep,
+    fs
+};
 
 pub use tokio::{time::sleep, time::Duration};
 
@@ -46,4 +54,5 @@ pub use netstat2::{
     get_sockets_info, AddressFamilyFlags, ProtocolFlags, ProtocolSocketInfo, SocketInfo, TcpState,
 };
 
-pub use wmi::{WMIConnection, Variant, COMLibrary};
+#[cfg(windows)]
+pub use wmi::{COMLibrary, Variant, WMIConnection};

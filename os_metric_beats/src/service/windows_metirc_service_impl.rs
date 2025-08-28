@@ -1,25 +1,24 @@
 use crate::common::*;
 
-use crate::traits::os_metirc_service::*;
 use crate::model::network_packet_info::*;
 use crate::model::network_socket_info::*;
 use crate::model::network_usage::*;
-
+use crate::traits::metirc_service::*;
 
 #[derive(Debug)]
-pub struct MetricServiceImpl {
+pub struct WindowsMetricServiceImpl {
     system: System,
 }
 
-impl MetricServiceImpl {
+impl WindowsMetricServiceImpl {
     pub fn new() -> Self {
         let mut system: System = System::new_all();
         system.refresh_all(); /* 시스템 정보 초기화 */
-        MetricServiceImpl { system }
+        WindowsMetricServiceImpl { system }
     }
 }
 
-impl MetricService for MetricServiceImpl {
+impl MetricService for WindowsMetricServiceImpl {
     #[doc = "cpu 의 사용률을 체크. - cpu Max 값 추출"]
     fn get_cpu_usage(&mut self) -> f32 {
         /* 시스템 정보를 새로 고침 (CPU 사용량 등을 업데이트) */
@@ -55,23 +54,23 @@ impl MetricService for MetricServiceImpl {
     fn get_disk_usage(&mut self) -> f64 {
         self.system.refresh_disks_list();
 
-        /* D:\ 드라이브를 찾기 */ 
+        /* D:\ 드라이브를 찾기 */
         if let Some(disk) = self.system.disks().iter().find(|d| {
-            d.mount_point().to_str().map_or(false, |path| path.starts_with("D:\\"))
+            d.mount_point()
+                .to_str()
+                .map_or(false, |path| path.starts_with("D:\\"))
         }) {
-            
             let total_space: f64 = disk.total_space() as f64;
             let available_space: f64 = disk.available_space() as f64;
             let used_space: f64 = total_space - available_space;
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
 
-            /* 소수점 둘째 자리 반올림 */ 
+            /* 소수점 둘째 자리 반올림 */
             return (usage_percentage * 100.0).round() / 100.0;
         }
 
-
         // if let Some(disk) = self.system.disks().iter().next() {
-            
+
         //     println!("{:?}", disk);
 
         //     let total_space: f64 = disk.total_space() as f64;

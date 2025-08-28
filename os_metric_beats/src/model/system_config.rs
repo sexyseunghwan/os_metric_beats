@@ -4,4 +4,5 @@ use crate::common::*;
 #[getset(get = "pub")]
 pub struct SystemConfig {
     pub os_server_ip: String,
+    pub os_ver: String,
 }

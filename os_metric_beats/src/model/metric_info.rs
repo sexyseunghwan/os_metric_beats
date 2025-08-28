@@ -21,5 +21,5 @@ pub struct MetricInfo {
     pub tcp_listen: i32,
     pub tcp_close_wait: i32,
     pub process_use_mem: u64,
-    pub process_virtual_mem: u64
+    pub process_virtual_mem: u64,
 }

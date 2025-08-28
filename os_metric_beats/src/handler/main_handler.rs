@@ -2,12 +2,7 @@ use crate::common::*;
 
 use crate::repository::es_repository::*;
 
-use crate::traits::{
-    os_metirc_service::*,
-    request_service::*,
-    wmi_conn_service::*
-};
-
+use crate::traits::{metirc_service::*, request_service::*, wmi_conn_service::*};
 
 use crate::model::metric_info::*;
 use crate::model::network_packet_info::*;
@@ -29,6 +24,7 @@ pub struct MainHandler<M: MetricService, R: RequestService, W: WmiConnService> {
 }
 
 impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W> {
+    
     pub fn new(metric_service: M, request_service: R, wmi_conn_service: W) -> Self {
         let private_ip: String = match local_ip() {
             Ok(ip) => ip.to_string(),
@@ -40,7 +36,7 @@ impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W
                 }
             },
         };
-
+        
         Self {
             metric_service,
             request_service,
@@ -48,10 +44,9 @@ impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W
             private_ip,
         }
     }
-    
+
     #[doc = "시스템상의 지표를 수집해주는 함수."]
     pub async fn task_set(&mut self) -> Result<(), anyhow::Error> {
-
         let cur_utc_time: NaiveDateTime = get_currnet_utc_naivedatetime();
         let cur_utc_time_str: String =
             get_str_from_naivedatetime(cur_utc_time, "%Y-%m-%dT%H:%M:%SZ")?;
@@ -67,7 +62,6 @@ impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W
         let network_packet_info: NetworkPacketInfo =
             self.metric_service.get_network_packet_infos()?;
         let network_socket_info: NetworkSocketInfo = self.metric_service.get_socket_info()?;
-
 
         /* wmi 를 통한 지표 수집 */
         let wmi_process_mem_total: Win32MemRes = self.wmi_conn_service.get_process_mem_usage()?;
@@ -102,7 +96,7 @@ impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W
             network_socket_info.tcp_listen,
             network_socket_info.tcp_close_wait,
             process_use_mem,
-            process_virtual_mem
+            process_virtual_mem,
         );
 
         self.request_service
