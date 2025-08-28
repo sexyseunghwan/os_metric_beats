@@ -1,8 +1,14 @@
 use crate::common::*;
+
 use crate::model::network_packet_info::*;
 use crate::model::network_socket_info::*;
 use crate::model::network_usage::*;
+use crate::model::linux_config::*;
+
 use crate::traits::metirc_service::*;
+
+use crate::utils_module::io_utils::*;
+use crate::utils_module::math_utils::*;
 
 #[derive(Debug)]
 pub struct LinuxMetricServiceImpl {
@@ -16,27 +22,36 @@ impl LinuxMetricServiceImpl {
         LinuxMetricServiceImpl { system }
     }
 
-    #[doc = "네트워크 인터페이스별 통계 메트릭을 수집해주는 함수"]
-    fn read_proc_net_dev(&self) -> Result<(u64, u64), std::io::Error> {
-        let contents: String = fs::read_to_string("/proc/net/dev")?;
+    
 
-        let mut total_rx_bytes: u64 = 0u64;
-        let mut total_tx_bytes: u64 = 0u64;
+    // #[doc = "네트워크 인터페이스별 통계 메트릭을 수집해주는 함수"]
+    // fn read_proc_net_dev(&self) -> Result<(u64, u64), std::io::Error> {
+    //     let contents: String = fs::read_to_string("/proc/net/dev")?;
 
-        for line in contents.lines().skip(2) {
-            let parts: Vec<&str> = line.split_whitespace().collect();
-            if parts.len() >= 10 {
-                if let (Ok(rx_bytes), Ok(tx_bytes)) =
-                    (parts[1].parse::<u64>(), parts[9].parse::<u64>())
-                {
-                    total_rx_bytes += rx_bytes;
-                    total_tx_bytes += tx_bytes;
-                }
-            }
-        }
+    //     let mut total_rx_bytes: u64 = 0u64;
+    //     let mut total_tx_bytes: u64 = 0u64;
 
-        Ok((total_rx_bytes, total_tx_bytes))
-    }
+    //     for line in contents.lines().skip(2) {
+    //         let parts: Vec<&str> = line.split_whitespace().collect();
+    //         if parts.len() >= 10 {
+    //             if let (Ok(rx_bytes), Ok(tx_bytes)) =
+    //                 (parts[1].parse::<u64>(), parts[9].parse::<u64>())
+    //             {
+    //                 println!("rx_bytes: {:?}", rx_bytes);
+    //                 println!("tx_bytes: {:?}", tx_bytes);
+                    
+    //                 total_rx_bytes += rx_bytes;
+    //                 total_tx_bytes += tx_bytes;
+    //             }
+    //         }
+    //     }
+
+    //     println!("total_rx_bytes: {}", total_rx_bytes);
+    //     println!("total_tx_bytes: {}", total_tx_bytes);
+
+
+    //     Ok((total_rx_bytes, total_tx_bytes))
+    // }
 
     fn get_process_memory_usage_linux(
         &self,
@@ -93,19 +108,21 @@ impl LinuxMetricServiceImpl {
 
 impl MetricService for LinuxMetricServiceImpl {
     
-    #[doc = "CPU 사용률을 수집해주는 함수 - Linux 용도"]
+    #[doc = "CPU 사용률을 수집해주는 함수"]
     fn get_cpu_usage(&mut self) -> f32 {
         self.system.refresh_cpu();
+        
+        let max: f32 = self
+            .system
+            .cpus()
+            .iter()
+            .map(|c| c.cpu_usage())            /* 각 논리 코어 사용률 (0.0 ~ 100.0) */
+            .fold(0.0_f32, f32::max);
 
-        let mut max_cpu_val: f32 = 0.0;
-        for cpu in self.system.cpus() {
-            let thread_cpu_usage: f32 = cpu.cpu_usage();
-            max_cpu_val = max_cpu_val.max(thread_cpu_usage);
-        }
-
-        max_cpu_val.round() * 100.0 / 100.0
+        round2(max.clamp(0.0, 100.0))
     }
 
+    #[doc = "CPU 각 스레드의 평균 사용률을 수집해주는 함수"]
     fn get_cpu_usage_avg_thread(&mut self) -> f32 {
         self.system.refresh_cpu();
 
@@ -117,9 +134,10 @@ impl MetricService for LinuxMetricServiceImpl {
         }
 
         let cpu_usage_avg: f32 = cpu_usage_sum / cpu_thread_cnt as f32;
-        cpu_usage_avg.round() * 100.0 / 100.0
+        round2(cpu_usage_avg.clamp(0.0, 100.0))
     }
-
+    
+    #[doc = "마운트된 디스크 사용률을 수집해주는 함수"]
     fn get_disk_usage(&mut self) -> f64 {
         self.system.refresh_disks_list();
 
@@ -133,7 +151,7 @@ impl MetricService for LinuxMetricServiceImpl {
             let used_space: f64 = total_space - available_space;
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
 
-            return (usage_percentage * 100.0).round() / 100.0;
+            return round2_f64(usage_percentage.clamp(0.0, 100.0))
         }
 
         if let Some(disk) = self.system.disks().iter().next() {
@@ -141,12 +159,14 @@ impl MetricService for LinuxMetricServiceImpl {
             let available_space: f64 = disk.available_space() as f64;
             let used_space: f64 = total_space - available_space;
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
-            return (usage_percentage * 100.0).round() / 100.0;
+
+            return round2_f64(usage_percentage.clamp(0.0, 100.0))
         }
 
         0.0
     }
-
+    
+    #[doc = "시스템 메모리 사용률을 수집해주는 함수"]
     fn get_memory_usage(&mut self) -> f64 {
         self.system.refresh_memory();
 
@@ -154,29 +174,48 @@ impl MetricService for LinuxMetricServiceImpl {
         let used_memory: f64 = self.system.used_memory() as f64;
 
         let usage_percentage: f64 = (used_memory / total_memory) * 100.0;
-        (usage_percentage * 100.0).round() / 100.0
+
+        round2_f64(usage_percentage.clamp(0.0, 100.0))
     }
 
-    #[doc = "네트워크 사용량을 수집해주는 함수"]
+    #[doc = ""]
     fn get_network_usage(&mut self) -> NetworkUsage {
-        match self.read_proc_net_dev() {
-            Ok((rx_bytes, tx_bytes)) => NetworkUsage::new(rx_bytes, tx_bytes),
-            Err(_) => {
-                self.system.refresh_networks_list();
+        
 
-                let networks: &sysinfo::Networks = self.system.networks();
-                let mut network_received: u64 = 0;
-                let mut network_transmitted: u64 = 0;
+        //let rx = read_u64(format!("/sys/class/net/{}/statistics/rx_bytes"))
 
-                for (_interface_name, network) in networks.iter() {
-                    network_received += network.received();
-                    network_transmitted += network.transmitted();
-                }
-
-                NetworkUsage::new(network_received, network_transmitted)
-            }
-        }
     }
+
+    // fn read_sysfs_net_totals(iface: &str) -> Result<(u64, u64), anyhow::Error> {
+
+    //     let rx = read_u64(path)
+        
+        
+
+    // }
+
+    // #[doc = "네트워크 사용량을 수집해주는 함수"]
+    // fn get_network_usage(&mut self) -> NetworkUsage {
+        
+        
+    //     // match self.read_proc_net_dev() {
+    //     //     Ok((rx_bytes, tx_bytes)) => NetworkUsage::new(rx_bytes, tx_bytes),
+    //     //     Err(_) => {
+    //     //         self.system.refresh_networks_list();
+
+    //     //         let networks: &sysinfo::Networks = self.system.networks();
+    //     //         let mut network_received: u64 = 0;
+    //     //         let mut network_transmitted: u64 = 0;
+
+    //     //         for (_interface_name, network) in networks.iter() {
+    //     //             network_received += network.received();
+    //     //             network_transmitted += network.transmitted();
+    //     //         }
+
+    //     //         NetworkUsage::new(network_received, network_transmitted)
+    //     //     }
+    //     // }
+    // }
 
     fn get_process_count(&mut self) -> usize {
         self.system.refresh_processes();

@@ -43,6 +43,8 @@ pub mod traits;
 
 #[tokio::main]
 async fn main() {
+    
+    dotenv().ok();
     set_global_logger();
 
     info!("Operating System Metricbeats Program Start");
