@@ -5,9 +5,9 @@ use crate::repository::es_repository::*;
 use crate::traits::{metirc_service::*, request_service::*, wmi_conn_service::*};
 
 use crate::model::metric_info::*;
-use crate::model::network_packet_info::*;
-use crate::model::network_socket_info::*;
-use crate::model::network_usage::*;
+use crate::model::network::network_packet_info::*;
+use crate::model::network::network_socket_info::*;
+use crate::model::network::network_usage::*;
 use crate::model::system_config::*;
 use crate::model::win32_mem_res::*;
 
@@ -24,7 +24,6 @@ pub struct MainHandler<M: MetricService, R: RequestService, W: WmiConnService> {
 }
 
 impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W> {
-    
     pub fn new(metric_service: M, request_service: R, wmi_conn_service: W) -> Self {
         let private_ip: String = match local_ip() {
             Ok(ip) => ip.to_string(),
@@ -36,7 +35,7 @@ impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W
                 }
             },
         };
-        
+
         Self {
             metric_service,
             request_service,
@@ -57,10 +56,10 @@ impl<M: MetricService, R: RequestService, W: WmiConnService> MainHandler<M, R, W
         //let system_cpu_usage: f32 = self.metric_service.get_cpu_usage();
         //let system_disk_usage: f64 = self.metric_service.get_disk_usage();
         //let system_memory_usage: f64 = self.metric_service.get_memory_usage();
-        let system_network_usage: NetworkUsage = self.metric_service.get_network_usage();
-        // let process_count: usize = self.metric_service.get_process_count();
-        // let network_packet_info: NetworkPacketInfo =
-        //     self.metric_service.get_network_packet_infos()?;
+        //let system_network_usage: NetworkUsage = self.metric_service.get_network_usage()?;
+        //let process_count: usize = self.metric_service.get_process_count();
+        let network_packet_info: NetworkPacketInfo =
+            self.metric_service.get_network_packet_infos()?;
         // let network_socket_info: NetworkSocketInfo = self.metric_service.get_socket_info()?;
 
         // /* wmi 를 통한 지표 수집 */

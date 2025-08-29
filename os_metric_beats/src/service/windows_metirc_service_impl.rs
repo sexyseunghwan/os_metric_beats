@@ -1,8 +1,8 @@
 use crate::common::*;
 
-use crate::model::network_packet_info::*;
-use crate::model::network_socket_info::*;
-use crate::model::network_usage::*;
+use crate::model::network::network_packet_info::*;
+use crate::model::network::network_socket_info::*;
+use crate::model::network::network_usage::*;
 use crate::traits::metirc_service::*;
 
 #[derive(Debug)]
@@ -99,7 +99,7 @@ impl MetricService for WindowsMetricServiceImpl {
     }
 
     #[doc = "Network 사용량 체크"]
-    fn get_network_usage(&mut self) -> NetworkUsage {
+    fn get_network_usage(&mut self) -> Result<NetworkUsage, anyhow::Error> {
         self.system.refresh_networks_list();
 
         let networks: &sysinfo::Networks = self.system.networks();
@@ -111,7 +111,14 @@ impl MetricService for WindowsMetricServiceImpl {
             network_transmitted += network.transmitted();
         }
 
-        NetworkUsage::new(network_received, network_transmitted)
+        Ok(NetworkUsage::new(
+            network_received,
+            network_transmitted,
+            0,
+            0,
+            0,
+            0,
+        ))
     }
 
     #[doc = "현재 동작중인 프로세스의 개수"]

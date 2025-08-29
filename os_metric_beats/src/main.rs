@@ -25,8 +25,8 @@ pub mod repository;
 pub mod service;
 use service::linux_metric_service_impl::*;
 use service::linux_process_service_impl::*;
-use service::windows_metirc_service_impl::*;
 use service::request_service_impl::*;
+use service::windows_metirc_service_impl::*;
 use service::wmi_conn_service_impl::*;
 
 pub mod model;
@@ -43,7 +43,6 @@ pub mod traits;
 
 #[tokio::main]
 async fn main() {
-    
     dotenv().ok();
     set_global_logger();
 
@@ -82,7 +81,7 @@ async fn run_windows_mode() {
         RequestServiceImpl,
         WmiConnServiceImpl,
     > = MainHandler::new(os_metirc_service, request_service, wmi_conn_service);
-    
+
     loop {
         match main_handler.task_set().await {
             Ok(_) => (),

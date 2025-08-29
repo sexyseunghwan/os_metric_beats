@@ -16,15 +16,10 @@ pub fn get_currnet_utc_naivedatetime() -> NaiveDateTime {
     utc_now.naive_local()
 }
 
-/*
-    Function that returns the current UTC time as a string
-*/
-// pub fn get_current_utc_naivedate_str(fmt: &str) -> String {
-
-//     let curr_time = get_current_utc_naivedate();
-//     get_str_from_naivedate(curr_time, fmt)
-
-// }
+#[doc = "현재 기준 UTC 시간을 epoch 형태로 표현"]
+pub fn get_curretn_utc_epoch() -> i64 {
+    Utc::now().timestamp()
+}
 
 /*
     Function that converts the date data 'naivedate' format to the string format
