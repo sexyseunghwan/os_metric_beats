@@ -1,6 +1,8 @@
 use crate::common::*;
-use crate::model::win32_mem_res::*;
-use crate::traits::wmi_conn_service::*;
+
+use crate::model::memory::os_mem_res::*;
+
+use crate::traits::memory_service::*;
 
 #[derive(Debug)]
 pub struct LinuxProcessServiceImpl;
@@ -10,67 +12,41 @@ impl LinuxProcessServiceImpl {
         LinuxProcessServiceImpl
     }
 
+    #[doc = "프로세스의 메모리 사용량을 계산하는 함수 - 리눅스 버전"]
     fn get_process_memory_usage_linux(
         &self,
         keywords: &[&str],
-    ) -> Result<(u64, u64), anyhow::Error> {
-        use std::fs;
-        use std::path::Path;
+    ) -> Result<OsMemRes, anyhow::Error> {
+        let mut sys: System = System::new_all();
+        sys.refresh_all();
+        
+        
+        let mut total_rss_byte: u64 = 0;
+        let mut total_vms_byte: u64 = 0;
 
-        let mut total_rss = 0u64;
-        let mut total_vss = 0u64;
+        for (_pid, proc_) in sys.processes() {
+            let name_lower: String = proc_.name().to_lowercase();
 
-        let proc_dir = Path::new("/proc");
-        if let Ok(entries) = fs::read_dir(proc_dir) {
-            for entry in entries.flatten() {
-                if let Ok(pid) = entry.file_name().to_string_lossy().parse::<u32>() {
-                    let status_path = format!("/proc/{}/status", pid);
-                    let cmdline_path = format!("/proc/{}/cmdline", pid);
-
-                    if let (Ok(status_content), Ok(cmdline_content)) = (
-                        fs::read_to_string(&status_path),
-                        fs::read_to_string(&cmdline_path),
-                    ) {
-                        let cmdline_lower = cmdline_content.replace('\0', " ").to_lowercase();
-                        let matches_keyword = keywords.iter().any(|kw| cmdline_lower.contains(kw));
-
-                        if matches_keyword {
-                            let mut rss_kb = 0u64;
-                            let mut vss_kb = 0u64;
-
-                            for line in status_content.lines() {
-                                if line.starts_with("VmRSS:") {
-                                    if let Some(value) = line.split_whitespace().nth(1) {
-                                        rss_kb = value.parse().unwrap_or(0);
-                                    }
-                                } else if line.starts_with("VmSize:") {
-                                    if let Some(value) = line.split_whitespace().nth(1) {
-                                        vss_kb = value.parse().unwrap_or(0);
-                                    }
-                                }
-                            }
-
-                            total_rss += rss_kb * 1024;
-                            total_vss += vss_kb * 1024;
-                        }
-                    }
-                }
+            if keywords.iter().any(|kw| name_lower.contains(&kw.to_lowercase())) {
+                /* sysinfo: memory()와 virtual_memory()는 KiB 단위 */ 
+                total_rss_byte += proc_.memory();
+                total_vms_byte += proc_.virtual_memory();
             }
         }
 
-        Ok((total_rss, total_vss))
+        Ok(OsMemRes::new(total_rss_byte, total_vms_byte))
     }
 }
 
-impl WmiConnService for LinuxProcessServiceImpl {
-    fn get_process_mem_usage(&self) -> Result<Win32MemRes, anyhow::Error> {
+impl MemoryService for LinuxProcessServiceImpl {
+    fn get_process_mem_usage(&self) -> Result<OsMemRes, anyhow::Error> {
         let target_keywords: [&str; 3] = ["java", "jdk", "elasticsearch"];
 
         match self.get_process_memory_usage_linux(&target_keywords) {
-            Ok((total_rss, total_vss)) => Ok(Win32MemRes::new(total_rss, total_vss)),
+            Ok(os_mem_res) => Ok(os_mem_res),
             Err(e) => {
                 error!("Failed to get Linux process memory usage: {:?}", e);
-                Ok(Win32MemRes::new(0, 0))
+                Ok(OsMemRes::new(0, 0))
             }
         }
     }

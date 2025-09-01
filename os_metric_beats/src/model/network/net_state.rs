@@ -6,11 +6,11 @@ use crate::model::network::iface_counters::*;
 pub struct NetState {
     pub ifaces: HashMap<String, IfaceCounters>,
     pub statistics: HashMap<String, IfaceCounters>,
-    pub updated_at: i64,
+    pub updated_at: String,
 }
 
 impl NetState {
-    pub fn new(updated_at: i64) -> Self {
+    pub fn new(updated_at: String) -> Self {
         Self {
             ifaces: HashMap::new(),
             statistics: HashMap::new(),
@@ -34,7 +34,7 @@ impl NetState {
         self.statistics.get(name)
     }
 
-    pub fn update_timestamp(&mut self, timestamp: i64) {
+    pub fn update_timestamp(&mut self, timestamp: String) {
         self.updated_at = timestamp;
     }
 }

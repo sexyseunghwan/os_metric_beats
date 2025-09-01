@@ -41,7 +41,7 @@ pub use once_cell::sync::Lazy as once_lazy;
 
 pub use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
 
-pub use sysinfo::{ComponentExt, CpuExt, DiskExt, NetworkExt, NetworksExt, System, SystemExt};
+pub use sysinfo::{ComponentExt, CpuExt, DiskExt, NetworkExt, NetworksExt, System, SystemExt, ProcessExt};
 
 pub use local_ip_address::local_ip;
 

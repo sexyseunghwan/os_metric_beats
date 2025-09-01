@@ -41,6 +41,8 @@ use env_configuration::env_config::*;
 
 pub mod traits;
 
+pub mod common_enums;
+
 #[tokio::main]
 async fn main() {
     dotenv().ok();
@@ -108,7 +110,7 @@ async fn run_linux_mode() {
         RequestServiceImpl,
         LinuxProcessServiceImpl,
     > = MainHandler::new(os_metirc_service, request_service, linux_process_service);
-
+    
     loop {
         match main_handler.task_set().await {
             Ok(_) => (),

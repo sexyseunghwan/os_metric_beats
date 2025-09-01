@@ -1,9 +1,9 @@
 use crate::common::*;
 
-use crate::model::win32_mem_res::*;
-use crate::model::win32_process::*;
+use crate::model::memory::os_mem_res::*;
+use crate::model::memory::win32_process::*;
 
-use crate::traits::wmi_conn_service::*;
+use crate::traits::memory_service::*;
 
 #[cfg(windows)]
 use wmi::*;
@@ -46,9 +46,9 @@ impl WmiConnServiceImpl {
     }
 }
 
-impl WmiConnService for WmiConnServiceImpl {
+impl MemoryService for WmiConnServiceImpl {
     #[doc = "윈도우 시스템에서 특정 프로세스가 어느정도의 메모리를 사용하는지 확인해주는 함수"]
-    fn get_process_mem_usage(&self) -> Result<Win32MemRes, anyhow::Error> {
+    fn get_process_mem_usage(&self) -> Result<OsMemRes, anyhow::Error> {
         #[cfg(windows)]
         {
             let target_keywords: [&str; 3] = ["java", "jdk", "elasticsearch"];
@@ -72,12 +72,12 @@ impl WmiConnService for WmiConnServiceImpl {
                 }
             }
 
-            Ok(Win32MemRes::new(total_working_set_size, total_virtual_size))
+            Ok(OsMemRes::new(total_working_set_size, total_virtual_size))
         }
 
         #[cfg(not(windows))]
         {
-            Ok(Win32MemRes::new(0, 0))
+            Ok(OsMemRes::new(0, 0))
         }
     }
 }

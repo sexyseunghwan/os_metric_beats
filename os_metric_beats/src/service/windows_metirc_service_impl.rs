@@ -1,6 +1,6 @@
 use crate::common::*;
 
-use crate::model::network::network_packet_info::*;
+use crate::model::network_packet::network_packet_info::*;
 use crate::model::network::network_socket_info::*;
 use crate::model::network::network_usage::*;
 use crate::traits::metirc_service::*;
@@ -136,17 +136,17 @@ impl MetricService for WindowsMetricServiceImpl {
     ///
     /// # Returns
     /// * (i64, i64)
-    fn get_socket_info_parsing(&mut self, socket_vec: &Vec<&str>) -> (i64, i64) {
-        let recv_packet: i64 = match socket_vec.get(socket_vec.len() - 2) {
-            Some(recv_packet) => recv_packet.parse::<i64>().unwrap_or(0),
+    fn get_socket_info_parsing(&mut self, socket_vec: &Vec<&str>) -> (u64, u64) {
+        let recv_packet: u64 = match socket_vec.get(socket_vec.len() - 2) {
+            Some(recv_packet) => recv_packet.parse::<u64>().unwrap_or(0),
             None => {
                 error!("[Error][get_socket_info_parsing()] The value 'recv_packet' does not exist. : {:?}", socket_vec);
                 0
             }
         };
 
-        let send_packet: i64 = match socket_vec.last() {
-            Some(send_packet) => send_packet.parse::<i64>().unwrap_or(0),
+        let send_packet: u64 = match socket_vec.last() {
+            Some(send_packet) => send_packet.parse::<u64>().unwrap_or(0),
             None => {
                 error!("[Error][get_socket_info_parsing()] The value 'send_packet' does not exist. : {:?}", socket_vec);
                 0
@@ -165,10 +165,10 @@ impl MetricService for WindowsMetricServiceImpl {
 
         let output_str: std::borrow::Cow<'_, str> = String::from_utf8_lossy(&output);
 
-        let mut recv_dropped_packets: i64 = 0;
-        let mut send_dropped_packets: i64 = 0;
-        let mut recv_errors_packet: i64 = 0;
-        let mut send_errors_packet: i64 = 0;
+        let mut recv_dropped_packets: u64 = 0;
+        let mut send_dropped_packets: u64 = 0;
+        let mut recv_errors_packet: u64 = 0;
+        let mut send_errors_packet: u64 = 0;
 
         let mut line_cursor: i32 = 0;
 

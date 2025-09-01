@@ -36,3 +36,7 @@ pub static LINUX_CONFIG_INFO: once_lazy<String> =
 #[doc = "Function to globally initialize the 'NETWORK_NET_INFO_JSON' variable"]
 pub static NETWORK_NET_INFO_JSON: once_lazy<String> =
     once_lazy::new(|| get_env_var_with_logging("NETWORK_NET_INFO_JSON"));
+
+#[doc = "Function to globally initialize the 'NETWORK_PACKET_INFO_JSON' variable"]
+pub static NETWORK_PACKET_INFO_JSON: once_lazy<String> =
+    once_lazy::new(|| get_env_var_with_logging("NETWORK_PACKET_INFO_JSON"));
