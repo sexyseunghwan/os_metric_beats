@@ -1,4 +1,3 @@
-use crate::common::*;
 
 #[doc = "소수점 둘째짜리까지만 표현해주는 함수"]
 pub fn round2(x: f32) -> f32 {

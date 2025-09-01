@@ -16,15 +16,14 @@ use crate::utils_module::time_utils::*;
 
 use crate::env_configuration::env_config::*;
 
-pub struct MainHandler<M: MetricService, R: RequestService, MS: MemoryService> {
+pub struct MainHandler<M: MetricService, R: RequestService> {
     metric_service: M,
     request_service: R,
-    memory_service: MS,
     private_ip: String,
 }
 
-impl<M: MetricService, R: RequestService, MS: MemoryService> MainHandler<M, R, MS> {
-    pub fn new(metric_service: M, request_service: R, memory_service: MS) -> Self {
+impl<M: MetricService, R: RequestService> MainHandler<M, R> {
+    pub fn new(metric_service: M, request_service: R) -> Self {
         let private_ip: String = match local_ip() {
             Ok(ip) => ip.to_string(),
             Err(_err) => match read_toml_from_file::<SystemConfig>(&SYSTEM_INFO) {
@@ -39,7 +38,6 @@ impl<M: MetricService, R: RequestService, MS: MemoryService> MainHandler<M, R, M
         Self {
             metric_service,
             request_service,
-            memory_service,
             private_ip,
         }
     }
@@ -63,46 +61,46 @@ impl<M: MetricService, R: RequestService, MS: MemoryService> MainHandler<M, R, M
         let network_socket_info: NetworkSocketInfo = self.metric_service.get_socket_info()?;
         
         /* Elasticsearch 관련 메모리 사용 지표 수집 */
-        let process_mem_total: OsMemRes = self.memory_service.get_process_mem_usage()?;
-        let process_use_mem: u64 = process_mem_total.working_set_size;
-        let process_virtual_mem: u64 = process_mem_total.virtual_size;
+        // let process_mem_total: OsMemRes = self.memory_service.get_process_mem_usage()?;
+        // let process_use_mem: u64 = process_mem_total.working_set_size;
+        // let process_virtual_mem: u64 = process_mem_total.virtual_size;
         
-        let log_index_name: &String = es_conn.index_pattern();
+        // let log_index_name: &String = es_conn.index_pattern();
 
-        let index_name: String = format!(
-            "{}{}",
-            log_index_name,
-            get_str_from_naivedatetime(cur_utc_time, "%Y%m%d")?
-        );
+        // let index_name: String = format!(
+        //     "{}{}",
+        //     log_index_name,
+        //     get_str_from_naivedatetime(cur_utc_time, "%Y%m%d")?
+        // );
 
-        let metric_info: MetricInfo = MetricInfo::new(
-            cur_utc_time_str,
-            self.private_ip.clone(),
-            system_cpu_usage,
-            system_disk_usage,
-            system_memory_usage,
-            system_network_usage.network_received,
-            system_network_usage.network_transmitted,
-            process_count,
-            network_packet_info.recv_dropped_packets,
-            network_packet_info.send_dropped_packets,
-            network_packet_info.recv_errors_packet,
-            network_packet_info.send_errors_packet,
-            network_socket_info.tcp_connections,
-            network_socket_info.udp_sockets,
-            network_socket_info.tcp_established,
-            network_socket_info.tcp_timewait,
-            network_socket_info.tcp_listen,
-            network_socket_info.tcp_close_wait,
-            process_use_mem,
-            process_virtual_mem,
-        );
+        // let metric_info: MetricInfo = MetricInfo::new(
+        //     cur_utc_time_str,
+        //     self.private_ip.clone(),
+        //     system_cpu_usage,
+        //     system_disk_usage,
+        //     system_memory_usage,
+        //     system_network_usage.network_received,
+        //     system_network_usage.network_transmitted,
+        //     process_count,
+        //     network_packet_info.recv_dropped_packets,
+        //     network_packet_info.send_dropped_packets,
+        //     network_packet_info.recv_errors_packet,
+        //     network_packet_info.send_errors_packet,
+        //     network_socket_info.tcp_connections,
+        //     network_socket_info.udp_sockets,
+        //     network_socket_info.tcp_established,
+        //     network_socket_info.tcp_timewait,
+        //     network_socket_info.tcp_listen,
+        //     network_socket_info.tcp_close_wait,
+        //     process_use_mem,
+        //     process_virtual_mem,
+        // );
 
-        self.request_service
-            .request_metric_to_elastic(index_name, metric_info)
-            .await?;
+        // self.request_service
+        //     .request_metric_to_elastic(index_name, metric_info)
+        //     .await?;
 
-        info!("System metrics collection completed successfully.");
+        // info!("System metrics collection completed successfully.");
 
         Ok(())
     }

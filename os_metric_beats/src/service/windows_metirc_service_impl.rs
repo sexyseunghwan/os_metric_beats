@@ -3,6 +3,7 @@ use crate::common::*;
 use crate::model::network_packet::network_packet_info::*;
 use crate::model::network::network_socket_info::*;
 use crate::model::network::network_usage::*;
+use crate::model::memory::os_mem_res::*;
 use crate::traits::metirc_service::*;
 
 #[derive(Debug)]
@@ -240,5 +241,28 @@ impl MetricService for WindowsMetricServiceImpl {
         );
 
         Ok(network_socket_info)
+    }
+
+    #[doc = ""]
+    fn get_process_mem_usage(&mut self) -> Result<OsMemRes, anyhow::Error> {
+
+        let target_keywords: [&str; 3] = ["java", "jdk", "elasticsearch"];
+
+        self.system.refresh_all();
+
+        let mut total_rss_byte: u64 = 0;
+        let mut total_vms_byte: u64 = 0;
+
+        for (_pid, proc_) in self.system.processes() {
+            let name_lower: String = proc_.name().to_lowercase();
+
+            if target_keywords.iter().any(|kw| name_lower.contains(&kw.to_lowercase())) {
+                /* sysinfo: memory()와 virtual_memory()는 KiB 단위 */ 
+                total_rss_byte += proc_.memory();
+                total_vms_byte += proc_.virtual_memory();
+            }
+        }
+        
+        Ok(OsMemRes::new(total_rss_byte, total_vms_byte))
     }
 }

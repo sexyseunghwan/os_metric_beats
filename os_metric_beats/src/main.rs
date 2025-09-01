@@ -24,10 +24,10 @@ pub mod repository;
 
 pub mod service;
 use service::linux_metric_service_impl::*;
-use service::linux_process_service_impl::*;
+//use service::linux_process_service_impl::*;
 use service::request_service_impl::*;
 use service::windows_metirc_service_impl::*;
-use service::wmi_conn_service_impl::*;
+//use service::wmi_conn_service_impl::*;
 
 pub mod model;
 use model::system_config::*;
@@ -77,12 +77,12 @@ async fn run_windows_mode() {
 
     let os_metirc_service: WindowsMetricServiceImpl = WindowsMetricServiceImpl::new();
     let request_service: RequestServiceImpl = RequestServiceImpl::new();
-    let wmi_conn_service: WmiConnServiceImpl = WmiConnServiceImpl::new();
+    // let main_handler = 
+    // let wmi_conn_service: WmiConnServiceImpl = WmiConnServiceImpl::new();
     let mut main_handler: MainHandler<
         WindowsMetricServiceImpl,
         RequestServiceImpl,
-        WmiConnServiceImpl,
-    > = MainHandler::new(os_metirc_service, request_service, wmi_conn_service);
+    > = MainHandler::new(os_metirc_service, request_service);
 
     loop {
         match main_handler.task_set().await {
@@ -104,12 +104,10 @@ async fn run_linux_mode() {
 
     let os_metirc_service: LinuxMetricServiceImpl = LinuxMetricServiceImpl::new();
     let request_service: RequestServiceImpl = RequestServiceImpl::new();
-    let linux_process_service: LinuxProcessServiceImpl = LinuxProcessServiceImpl::new();
     let mut main_handler: MainHandler<
         LinuxMetricServiceImpl,
         RequestServiceImpl,
-        LinuxProcessServiceImpl,
-    > = MainHandler::new(os_metirc_service, request_service, linux_process_service);
+    > = MainHandler::new(os_metirc_service, request_service);
     
     loop {
         match main_handler.task_set().await {

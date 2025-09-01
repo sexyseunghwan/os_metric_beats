@@ -30,20 +30,4 @@ impl TcpState {
             _ => None,
         }
     }
-
-    fn as_str(&self) -> &'static str {
-        match self {
-            TcpState::Established => "ESTABLISHED",
-            TcpState::SynSent => "SYN_SENT",
-            TcpState::SynRecv => "SYN_RECV",
-            TcpState::FinWait1 => "FIN_WAIT1",
-            TcpState::FinWait2 => "FIN_WAIT2",
-            TcpState::TimeWait => "TIME_WAIT",
-            TcpState::Close => "CLOSE",
-            TcpState::CloseWait => "CLOSE_WAIT",
-            TcpState::LastAck => "LAST_ACK",
-            TcpState::Listen => "LISTEN",
-            TcpState::Closing => "CLOSING",
-        }
-    }
 }
