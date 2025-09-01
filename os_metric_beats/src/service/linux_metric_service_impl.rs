@@ -442,7 +442,7 @@ impl MetricService for LinuxMetricServiceImpl {
         ))
     }
     
-    #[doc = ""]
+    #[doc = "Elasticsearch 관련 프로세스가 메모리를 얼마나 사용하는지 체크해주는 함수"]
     fn get_process_mem_usage(&mut self) -> Result<OsMemRes, anyhow::Error> {
 
         let target_keywords: [&str; 3] = ["java", "jdk", "elasticsearch"];
@@ -461,7 +461,7 @@ impl MetricService for LinuxMetricServiceImpl {
                 total_vms_byte += proc_.virtual_memory();
             }
         }
-        
+
         Ok(OsMemRes::new(total_rss_byte, total_vms_byte))
     }
 }

@@ -242,8 +242,8 @@ impl MetricService for WindowsMetricServiceImpl {
 
         Ok(network_socket_info)
     }
-
-    #[doc = ""]
+    
+    #[doc = "Elasticsearch 관련 프로세스가 메모리를 얼마나 사용하는지 체크해주는 함수"]
     fn get_process_mem_usage(&mut self) -> Result<OsMemRes, anyhow::Error> {
 
         let target_keywords: [&str; 3] = ["java", "jdk", "elasticsearch"];
