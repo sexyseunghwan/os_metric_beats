@@ -20,7 +20,7 @@ pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
                 panic!("{:?}", e)
             }
         };
-
+    
     let es_hosts: Vec<String> = cluster_config.hosts().clone();
     let es_id: String = cluster_config.es_id().clone().unwrap_or(String::from(""));
     let es_pw: String = cluster_config.es_pw().clone().unwrap_or(String::from(""));
@@ -68,17 +68,28 @@ impl EsRepositoryPub {
         es_pw: &str,
         index_pattern: &str,
     ) -> Result<Self, anyhow::Error> {
+        if hosts.is_empty() {
+            return Err(anyhow::anyhow!("No Elasticsearch hosts provided"));
+        }
+
         let mut es_clients: Vec<EsClient> = Vec::new();
 
         for url in hosts {
+            if url.trim().is_empty() {
+                return Err(anyhow::anyhow!("Empty host found in hosts configuration"));
+            }
+
             /* Elasticsearch 에 비밀번호를 설정해둔 경우와 그렇지 않은 경우를 고려함 */
             let parse_url: String = if !es_id.is_empty() && !es_pw.is_empty() {
-                format!("http://{}:{}@{}", es_id, es_pw, url)
+                let encoded_id = urlencoding::encode(es_id);
+                let encoded_pw = urlencoding::encode(es_pw);
+                format!("http://{}:{}@{}", encoded_id, encoded_pw, url.trim())
             } else {
-                format!("http://{}", url)
+                format!("http://{}", url.trim())
             };
 
-            let es_url: Url = Url::parse(&parse_url)?;
+            let es_url: Url = Url::parse(&parse_url)
+                .map_err(|e| anyhow::anyhow!("[ERROR][EsRepositoryPub->new] Failed to parse URL '{}': {}", parse_url, e))?;
             let conn_pool: SingleNodeConnectionPool = SingleNodeConnectionPool::new(es_url);
             let transport: elasticsearch::http::transport::Transport =
                 TransportBuilder::new(conn_pool)
