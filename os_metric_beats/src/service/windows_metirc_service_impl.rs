@@ -160,15 +160,13 @@ impl MetricService for WindowsMetricServiceImpl {
             .args(["-e"])
             .output()?
             .stdout;
-
+        
         let output_str: std::borrow::Cow<'_, str> = String::from_utf8_lossy(&output);
 
         let mut recv_dropped_packets: u64 = 0;
         let mut send_dropped_packets: u64 = 0;
         let mut recv_errors_packet: u64 = 0;
         let mut send_errors_packet: u64 = 0;
-
-        let line_cursor: i32 = 0; //? 이거 이상한데?
 
         for (line_cursor, line) in (0_i32..).zip(output_str.lines()) {
             let parts: Vec<&str> = line.split_whitespace().collect();
