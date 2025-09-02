@@ -4,11 +4,20 @@ use crate::model::network_packet::network_packet_info::*;
 use crate::model::network::network_socket_info::*;
 use crate::model::network::network_usage::*;
 use crate::model::memory::os_mem_res::*;
+
+use crate::utils_module::math_utils::*;
+
 use crate::traits::metirc_service::*;
 
 #[derive(Debug)]
 pub struct WindowsMetricServiceImpl {
     system: System,
+}
+
+impl Default for WindowsMetricServiceImpl {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl WindowsMetricServiceImpl {
@@ -32,7 +41,7 @@ impl MetricService for WindowsMetricServiceImpl {
             max_cpu_val = max_cpu_val.max(thread_cpu_usage);
         }
 
-        max_cpu_val.round() * 100.0 / 100.0
+        round2(max_cpu_val)
     }
 
     #[doc = "cpu 의 평균 사용률을 체크. - 스레드별 평균"]
@@ -48,18 +57,18 @@ impl MetricService for WindowsMetricServiceImpl {
         }
 
         let cpu_usage_avg: f32 = cpu_usage_sum / cpu_thread_cnt as f32;
-        cpu_usage_avg.round() * 100.0 / 100.0
+        round2(cpu_usage_avg)
     }
 
     #[doc = "disk 사용률을 체크"]
-    fn get_disk_usage(&mut self) -> f64 {
+    fn get_disk_usage(&mut self) -> f32 {
         self.system.refresh_disks_list();
 
         /* D:\ 드라이브를 찾기 */
         if let Some(disk) = self.system.disks().iter().find(|d| {
             d.mount_point()
                 .to_str()
-                .map_or(false, |path| path.starts_with("D:\\"))
+                .is_some_and(|path| path.starts_with("D:\\"))
         }) {
             let total_space: f64 = disk.total_space() as f64;
             let available_space: f64 = disk.available_space() as f64;
@@ -67,26 +76,14 @@ impl MetricService for WindowsMetricServiceImpl {
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
 
             /* 소수점 둘째 자리 반올림 */
-            return (usage_percentage * 100.0).round() / 100.0;
+            return round2_f32(usage_percentage)
         }
-
-        // if let Some(disk) = self.system.disks().iter().next() {
-
-        //     println!("{:?}", disk);
-
-        //     let total_space: f64 = disk.total_space() as f64;
-        //     let available_space: f64 = disk.available_space() as f64;
-        //     let used_space: f64 = total_space - available_space;
-
-        //     let usage_percentage: f64 = (used_space / total_space) * 100.0;
-        //     return (usage_percentage * 100.0).round() / 100.0;
-        // }
 
         0.0
     }
 
     #[doc = "memory 사용률을 체크"]
-    fn get_memory_usage(&mut self) -> f64 {
+    fn get_memory_usage(&mut self) -> f32 {
         self.system.refresh_memory();
 
         let total_memory: f64 = self.system.total_memory() as f64;
@@ -96,7 +93,7 @@ impl MetricService for WindowsMetricServiceImpl {
         let usage_percentage: f64 = (used_memory / total_memory) * 100.0;
 
         /* 소수점 둘째 자리에서 반올림 */
-        (usage_percentage * 100.0).round() / 100.0
+        round2_f32(usage_percentage)
     }
 
     #[doc = "Network 사용량 체크"]
@@ -137,7 +134,7 @@ impl MetricService for WindowsMetricServiceImpl {
     ///
     /// # Returns
     /// * (i64, i64)
-    fn get_socket_info_parsing(&mut self, socket_vec: &Vec<&str>) -> (u64, u64) {
+    fn get_socket_info_parsing(&mut self, socket_vec: &[&str]) -> (u64, u64) {
         let recv_packet: u64 = match socket_vec.get(socket_vec.len() - 2) {
             Some(recv_packet) => recv_packet.parse::<u64>().unwrap_or(0),
             None => {
@@ -171,9 +168,9 @@ impl MetricService for WindowsMetricServiceImpl {
         let mut recv_errors_packet: u64 = 0;
         let mut send_errors_packet: u64 = 0;
 
-        let mut line_cursor: i32 = 0;
+        let line_cursor: i32 = 0; //? 이거 이상한데?
 
-        for line in output_str.lines() {
+        for (line_cursor, line) in (0_i32..).zip(output_str.lines()) {
             let parts: Vec<&str> = line.split_whitespace().collect();
 
             if line_cursor == 6 {
@@ -184,7 +181,6 @@ impl MetricService for WindowsMetricServiceImpl {
                 (recv_errors_packet, send_errors_packet) = self.get_socket_info_parsing(&parts);
             }
 
-            line_cursor += 1;
         }
 
         let network_packet_info: NetworkPacketInfo = NetworkPacketInfo::new(
@@ -253,7 +249,7 @@ impl MetricService for WindowsMetricServiceImpl {
         let mut total_rss_byte: u64 = 0;
         let mut total_vms_byte: u64 = 0;
 
-        for (_pid, proc_) in self.system.processes() {
+        for proc_ in self.system.processes().values() {
             let name_lower: String = proc_.name().to_lowercase();
 
             if target_keywords.iter().any(|kw| name_lower.contains(&kw.to_lowercase())) {

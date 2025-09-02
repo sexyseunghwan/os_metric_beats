@@ -8,7 +8,7 @@ use crate::env_configuration::env_config::*;
 
 #[doc = "Elasticsearch connection 을 싱글톤으로 관리하기 위한 전역 변수."]
 static ELASTICSEARCH_CLIENT: once_lazy<Arc<EsRepositoryPub>> =
-    once_lazy::new(|| initialize_elastic_clients());
+    once_lazy::new(initialize_elastic_clients);
 
 #[doc = "Function to initialize Elasticsearch connection instances"]
 pub fn initialize_elastic_clients() -> Arc<EsRepositoryPub> {
@@ -56,9 +56,8 @@ pub struct EsRepositoryPub {
     index_pattern: String,
 }
 
-#[derive(Debug, Getters, Clone, new)]
+#[derive(Debug, Clone)]
 pub(crate) struct EsClient {
-    host: String,
     es_conn: Elasticsearch,
 }
 
@@ -72,14 +71,12 @@ impl EsRepositoryPub {
         let mut es_clients: Vec<EsClient> = Vec::new();
 
         for url in hosts {
-            let parse_url: String;
-
             /* Elasticsearch 에 비밀번호를 설정해둔 경우와 그렇지 않은 경우를 고려함 */
-            if es_id != "" && es_pw != "" {
-                parse_url = format!("http://{}:{}@{}", es_id, es_pw, url);
+            let parse_url: String = if !es_id.is_empty() && !es_pw.is_empty() {
+                format!("http://{}:{}@{}", es_id, es_pw, url)
             } else {
-                parse_url = format!("http://{}", url);
-            }
+                format!("http://{}", url)
+            };
 
             let es_url: Url = Url::parse(&parse_url)?;
             let conn_pool: SingleNodeConnectionPool = SingleNodeConnectionPool::new(es_url);
@@ -89,7 +86,7 @@ impl EsRepositoryPub {
                     .build()?;
 
             let elastic_conn: Elasticsearch = Elasticsearch::new(transport);
-            let es_client: EsClient = EsClient::new(url, elastic_conn);
+            let es_client: EsClient = EsClient { es_conn: elastic_conn };
             es_clients.push(es_client);
         }
 

@@ -27,6 +27,12 @@ pub struct LinuxMetricServiceImpl {
     linux_config: LinuxConfig,
 }
 
+impl Default for LinuxMetricServiceImpl {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LinuxMetricServiceImpl {
     pub fn new() -> Self {
         /* Linux 전용 설정 데이터 불러오기 */
@@ -263,6 +269,11 @@ impl LinuxMetricServiceImpl {
     }
 }
 
+
+
+/*======================================================================================*/
+/*=================================== Public Function ==================================*/
+/*======================================================================================*/
 impl MetricService for LinuxMetricServiceImpl {
     #[doc = "CPU 사용률을 수집해주는 함수"]
     fn get_cpu_usage(&mut self) -> f32 {
@@ -294,20 +305,20 @@ impl MetricService for LinuxMetricServiceImpl {
     }
 
     #[doc = "마운트된 디스크 사용률을 수집해주는 함수"]
-    fn get_disk_usage(&mut self) -> f64 {
+    fn get_disk_usage(&mut self) -> f32 {
         self.system.refresh_disks_list();
 
         if let Some(disk) = self.system.disks().iter().find(|d| {
             d.mount_point()
                 .to_str()
-                .map_or(false, |path| path == "/" || path.starts_with("/data"))
+                .is_some_and(|path| path == "/" || path.starts_with("/data"))
         }) {
             let total_space: f64 = disk.total_space() as f64;
             let available_space: f64 = disk.available_space() as f64;
             let used_space: f64 = total_space - available_space;
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
 
-            return round2_f64(usage_percentage.clamp(0.0, 100.0));
+            return round2_f32(usage_percentage.clamp(0.0, 100.0));
         }
 
         if let Some(disk) = self.system.disks().iter().next() {
@@ -316,14 +327,14 @@ impl MetricService for LinuxMetricServiceImpl {
             let used_space: f64 = total_space - available_space;
             let usage_percentage: f64 = (used_space / total_space) * 100.0;
 
-            return round2_f64(usage_percentage.clamp(0.0, 100.0));
+            return round2_f32(usage_percentage.clamp(0.0, 100.0));
         }
 
         0.0
     }
 
     #[doc = "시스템 메모리 사용률을 수집해주는 함수"]
-    fn get_memory_usage(&mut self) -> f64 {
+    fn get_memory_usage(&mut self) -> f32 {
         self.system.refresh_memory();
 
         let total_memory: f64 = self.system.total_memory() as f64;
@@ -331,7 +342,7 @@ impl MetricService for LinuxMetricServiceImpl {
 
         let usage_percentage: f64 = (used_memory / total_memory) * 100.0;
 
-        round2_f64(usage_percentage.clamp(0.0, 100.0))
+        round2_f32(usage_percentage.clamp(0.0, 100.0))
     }
 
     #[doc = "네트워크 사용량 데이터를 수집하고 반환하는 함수"]
@@ -348,7 +359,7 @@ impl MetricService for LinuxMetricServiceImpl {
         let cur_net_state: NetState = self.calculate_sysfs_net_infos(network_tx_rx_list); /* 현재 네트워크 내부/외부 송/수신 데이터 계산 */
         
         /* 현재 네트워크 지표를 파일에 써준다. */
-        save_as_json::<NetState>(&cur_net_state, &*NETWORK_NET_INFO_JSON)?;
+        save_as_json::<NetState>(&cur_net_state, &NETWORK_NET_INFO_JSON)?;
 
         /* 수집할 네트워크 사용량 지표 */
         let cur_network_usage: NetworkUsage =
@@ -385,7 +396,7 @@ impl MetricService for LinuxMetricServiceImpl {
     }
 
     // 이건 필요 없는 듯 해보이는데?
-    fn get_socket_info_parsing(&mut self, socket_vec: &Vec<&str>) -> (u64, u64) {
+    fn get_socket_info_parsing(&mut self, socket_vec: &[&str]) -> (u64, u64) {
         let recv_packet: u64 = match socket_vec.get(socket_vec.len() - 2) {
             Some(recv_packet) => recv_packet.parse::<u64>().unwrap_or(0),
             _none => {
@@ -452,7 +463,7 @@ impl MetricService for LinuxMetricServiceImpl {
         let mut total_rss_byte: u64 = 0;
         let mut total_vms_byte: u64 = 0;
 
-        for (_pid, proc_) in self.system.processes() {
+        for proc_ in self.system.processes().values() {
             let name_lower: String = proc_.name().to_lowercase();
 
             if target_keywords.iter().any(|kw| name_lower.contains(&kw.to_lowercase())) {

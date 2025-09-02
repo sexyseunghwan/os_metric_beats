@@ -1,6 +1,7 @@
 use crate::common::*;
 
-#[derive(Clone, Serialize, Deserialize, Debug, new)]
+#[derive(Clone, Serialize, Deserialize, Debug, Builder)]
+#[builder(setter(into), default)]
 pub struct MetricInfo {
     pub timestamp: String,
     pub host: String,
@@ -22,4 +23,31 @@ pub struct MetricInfo {
     pub tcp_close_wait: i32,
     pub process_use_mem: u64,
     pub process_virtual_mem: u64,
+}
+
+impl Default for MetricInfo {
+    fn default() -> Self {
+        MetricInfo {
+            timestamp: String::new(),
+            host: String::new(),
+            system_cpu_usage: 0.0,
+            system_disk_usage: 0.0,
+            system_memory_usage: 0.0,
+            network_received: 0,
+            network_transmitted: 0,
+            process_count: 0,
+            recv_dropped_packets: 0,
+            send_dropped_packets: 0,
+            recv_errors_packet: 0,
+            send_errors_packet: 0,
+            tcp_connections: 0,
+            udp_sockets: 0,
+            tcp_established: 0,
+            tcp_timewait: 0,
+            tcp_listen: 0,
+            tcp_close_wait: 0,
+            process_use_mem: 0,
+            process_virtual_mem: 0,
+        }
+    }
 }

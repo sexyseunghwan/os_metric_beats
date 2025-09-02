@@ -45,9 +45,8 @@ pub use sysinfo::{ComponentExt, CpuExt, DiskExt, NetworkExt, NetworksExt, System
 
 pub use local_ip_address::local_ip;
 
+pub use derive_builder::Builder;
+
 pub use netstat2::{
     get_sockets_info, AddressFamilyFlags, ProtocolFlags, ProtocolSocketInfo, SocketInfo, TcpState,
 };
-
-#[cfg(windows)]
-pub use wmi::{COMLibrary, Variant, WMIConnection};

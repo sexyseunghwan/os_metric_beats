@@ -11,7 +11,7 @@ History     : 2024-10-16 Seunghwan Shin       # [v.1.0.0] first create
               2025-01-08 Seunghwan Shin       # [v.1.1.2] 설정파일을 모두 json -> toml 파일로 전환
               2025-02-12 Seunghwan Shin       # [v.1.2.0] .env 파일사용으로 경로변경을 쉽게 할 수 있도록 변경
               2025-07-18 Seunghwan Shin       # [v.1.3.0] off-heap 사용량 추적을 위해서, wmi 지표 추가 수집
-              2025-08-00 Seunghwan Shin       # [v.2.0.0] Linux & Windows 호환해서 사용할 수 있도록 프로그램 전체 수정
+              2025-09-02 Seunghwan Shin       # [v.2.0.0] Linux & Windows 호환해서 사용할 수 있도록 프로그램 전체 수정
 */
 
 pub mod common;
@@ -24,10 +24,8 @@ pub mod repository;
 
 pub mod service;
 use service::linux_metric_service_impl::*;
-//use service::linux_process_service_impl::*;
 use service::request_service_impl::*;
 use service::windows_metirc_service_impl::*;
-//use service::wmi_conn_service_impl::*;
 
 pub mod model;
 use model::system_config::*;
@@ -77,8 +75,6 @@ async fn run_windows_mode() {
 
     let os_metirc_service: WindowsMetricServiceImpl = WindowsMetricServiceImpl::new();
     let request_service: RequestServiceImpl = RequestServiceImpl::new();
-    // let main_handler = 
-    // let wmi_conn_service: WmiConnServiceImpl = WmiConnServiceImpl::new();
     let mut main_handler: MainHandler<
         WindowsMetricServiceImpl,
         RequestServiceImpl,
